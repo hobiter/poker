@@ -1,0 +1,213 @@
+openapi: 3.0.3
+info:
+  title: Poker API (Phase 2)
+  version: "1.0.0"
+  description: "Minimal API contract for room management and hand start (Phase 2 scaffold)."
+servers:
+  - url: http://localhost:8000
+
+paths:
+  /rooms:
+    post:
+      summary: Create a new room
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RoomCreate'
+      responses:
+        '200':
+          description: Room created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateRoomResponse'
+
+  /rooms/{room_id}:
+    get:
+      summary: Get room details
+      parameters:
+        - name: room_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Room object
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Room'
+        '404':
+          description: Not found
+
+  /rooms/{room_id}/join:
+    post:
+      summary: Join a room as a guest (or user)
+      parameters:
+        - name: room_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/JoinRequest'
+      responses:
+        '200':
+          description: Player joined
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JoinResponse'
+        '404':
+          description: Room not found
+
+  /rooms/{room_id}/start_hand:
+    post:
+      summary: Start a new hand; deals hole cards and broadcasts events over WS
+      parameters:
+        - name: room_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: seed
+          in: query
+          description: Optional seed for deterministic dealing
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Hand started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HandStartResponse'
+        '400':
+          description: Validation error (e.g., not enough players)
+        '404':
+          description: Room not found
+
+  # Note: WebSocket endpoint is documented here for devs; OpenAPI does not natively describe WS flows.
+  /ws/{room_id}/{client_id}:
+    get:
+      summary: WebSocket connection (informational)
+      description: |
+        WebSocket endpoint used for realtime gameplay events. See `design/phase-1/websocket-events.md` and `design/phase-2/ws_event_schemas.json` for message names and payload schemas.
+      parameters:
+        - name: room_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: client_id
+          in: path
+          required: true
+          schema:
+            type: string
+
+components:
+  schemas:
+    Blinds:
+      type: object
+      properties:
+        small:
+          type: integer
+        big:
+          type: integer
+        ante:
+          type: integer
+      required: [small, big]
+
+    RoomCreate:
+      type: object
+      properties:
+        name:
+          type: string
+        seat_count:
+          type: integer
+          description: 6, 9 or 12
+        game_type:
+          type: string
+        blinds:
+          $ref: '#/components/schemas/Blinds'
+        starting_stack:
+          type: integer
+      required: [seat_count, game_type, blinds, starting_stack]
+
+    CreateRoomResponse:
+      type: object
+      properties:
+        roomId:
+          type: string
+
+    JoinRequest:
+      type: object
+      properties:
+        display_name:
+          type: string
+      required: [display_name]
+
+    JoinResponse:
+      type: object
+      properties:
+        playerId:
+          type: string
+
+    Player:
+      type: object
+      properties:
+        id:
+          type: string
+        display_name:
+          type: string
+        seat_number:
+          type: integer
+        stack:
+          type: integer
+
+    Room:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        seat_count:
+          type: integer
+        config:
+          type: object
+        players:
+          type: array
+          items:
+            $ref: '#/components/schemas/Player'
+
+    HandStartResponse:
+      type: object
+      properties:
+        handId:
+          type: string
+
+    HandData:
+      type: object
+      properties:
+        handId:
+          type: string
+        seed:
+          type: integer
+        holeCards:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+        board:
+          type: array
+          items:
+            type: string
