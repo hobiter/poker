@@ -1,0 +1,96 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "WebSocketEventSchemas",
+  "description": "JSON Schemas for WebSocket event payloads used by the server and clients.",
+  "definitions": {
+    "state_sync": {
+      "type": "object",
+      "properties": {
+        "type": { "const": "state_sync" },
+        "publicView": {
+          "type": "object",
+          "properties": {
+            "roomId": { "type": "string" },
+            "playerCount": { "type": "integer" }
+          },
+          "required": ["roomId"]
+        },
+        "personalView": { "type": "object" }
+      },
+      "required": ["type", "publicView", "personalView"]
+    },
+
+    "hand:start": {
+      "type": "object",
+      "properties": {
+        "type": { "const": "hand:start" },
+        "handId": { "type": "string" },
+        "playerCount": { "type": "integer" }
+      },
+      "required": ["type", "handId"]
+    },
+
+    "deal:hole": {
+      "type": "object",
+      "properties": {
+        "type": { "const": "deal:hole" },
+        "handId": { "type": "string" },
+        "cards": {
+          "type": "array",
+          "items": { "type": "string" },
+          "minItems": 2,
+          "maxItems": 2
+        }
+      },
+      "required": ["type", "handId", "cards"]
+    },
+
+    "action:post": {
+      "type": "object",
+      "properties": {
+        "type": { "const": "action:post" },
+        "payload": {
+          "type": "object",
+          "properties": {
+            "actionType": { "type": "string" },
+            "amount": { "type": ["integer", "null"] },
+            "street": { "type": "string" }
+          },
+          "required": ["actionType"]
+        }
+      },
+      "required": ["type", "payload"]
+    },
+
+    "action:posted": {
+      "type": "object",
+      "properties": {
+        "type": { "const": "action:posted" },
+        "from": { "type": "string" },
+        "payload": { "type": "object" }
+      },
+      "required": ["type", "from", "payload"]
+    },
+
+    "chat:message": {
+      "type": "object",
+      "properties": {
+        "type": { "const": "chat:message" },
+        "from": { "type": "string" },
+        "text": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["type", "from", "text"]
+    },
+
+    "error": {
+      "type": "object",
+      "properties": {
+        "type": { "const": "error" },
+        "code": { "type": "string" },
+        "message": { "type": "string" }
+      },
+      "required": ["type", "code", "message"]
+    }
+  }
+}
