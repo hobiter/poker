@@ -53,3 +53,15 @@ class InMemoryStore:
         if not room:
             return None
         return room.get("current_hand")
+
+    def set_session(self, room_id: str, session) -> None:
+        room = self.rooms.get(room_id)
+        if not room:
+            return
+        room["session"] = session
+
+    def get_session(self, room_id: str):
+        room = self.rooms.get(room_id)
+        if not room:
+            return None
+        return room.get("session")
