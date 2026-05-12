@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Poker Demo Web Client</title>
+  <style>
+    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial; max-width: 980px; margin: 20px; }
+    label, button, input { margin: 6px 4px; }
+    #messages { background:#fafafa;border:1px solid #ddd;padding:10px;height:360px;overflow:auto;white-space:pre-wrap;font-family:monospace }
+    .row { margin: 8px 0 }
+  </style>
+</head>
+<body>
+  <h1>Poker Demo (Browser)</h1>
+
+  <div class="row">
+    <label>Server base URL: <input id="serverUrl" value="http://localhost:8000" style="width:260px"></label>
+  </div>
+
+  <div class="row">
+    <button id="createRoomBtn">Create Room</button>
+    Room ID: <input id="roomId" style="width:360px">
+    <button id="joinBtn">Join Room</button>
+    Display name: <input id="displayName" value="DemoUser">
+    Player ID: <input id="playerId" style="width:360px">
+  </div>
+
+  <div class="row">
+    <button id="wsConnectBtn">Open WebSocket</button>
+    <button id="startHandBtn">Start Hand</button>
+    <button id="sendActionBtn">Send Call</button>
+    <button id="forceTimeoutBtn">Force Timeout</button>
+  </div>
+
+  <h3>Messages</h3>
+  <div id="messages">(no messages yet)</div>
+
+  <script src="app.js"></script>
+</body>
+</html>
