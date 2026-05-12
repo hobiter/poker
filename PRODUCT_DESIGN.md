@@ -1215,6 +1215,60 @@ This plan breaks the project into eight focused phases from discovery through sc
 - Poker engine state machine and WebSocket event list.
 - Database schema and analytics event model.
 
+#### Phase 1 — Checklist & Next Steps
+
+- **In progress:** Draft PRD and acceptance criteria (this is the current focus).
+- **Planned:** Create page-by-page wireframes (low-fidelity) for Landing, Create Room, Lobby, Table, Session Summary, and Profile pages.
+- **Planned:** Define room configuration schema (JSON schema) covering seat counts, blinds, buy-in, advanced options.
+- **Planned:** Specify poker engine state machine (hand lifecycle, legal action validation, side-pot rules).
+- **Planned:** Produce WebSocket event list for realtime messages (join, seat, deal, action, timer, showdown, sync).
+- **Planned:** Draft database schema for core entities: User, Room, Session, PlayerSession, Hand, HandAction, PlayerHand.
+- **Planned:** Define analytics event model (VPIP, PFR flags, action events) and required fields.
+- **Planned:** List risks, assumptions, and acceptance tests for each deliverable.
+- **Planned:** Produce a short milestone timeline (2–4 week sprints suggested) and owners for each task.
+
+Next immediate step: finalize the PRD section in this document and add acceptance criteria for the MVP boundary.
+
+## PRD — MVP Specification
+
+**Purpose:** Describe the minimally-shippable product that delivers playable, private, server-authoritative Texas Hold'em for home groups and provides basic session analytics.
+
+**MVP Scope (In‑scope):**
+- Create private room with invite link and optional password.
+- Join as guest, choose a seat (6/9/12 support).
+- No-limit Texas Hold'em gameplay with server-side deck, deal, and full hand lifecycle.
+- Basic betting actions: fold, check, call, bet, raise, all-in.
+- Blind posting and fixed blind levels; starting stack and buy-in controls.
+- WebSocket-based realtime sync and basic chat.
+- Persistent hand history and session-level chip summary.
+- Basic analytics: per-session VPIP and PFR, stack-over-time graph, CSV/JSON export.
+
+**Out of scope (for MVP):**
+- Real-money payments and KYC.
+- Full tournament/multi-table system.
+- Advanced game modes (run-it-twice, bomb pots) and voice chat.
+- Complex anti-cheat ML systems (light heuristics only).
+
+**Acceptance criteria (testable):**
+- A host can create a private room and generate an invite that allows peers to join and seat.
+- At least 2 seated players can start and complete a hand with correct dealing, legal actions enforcement, pot and side-pot calculation, and correct winner payout recorded in hand history.
+- Clients receive personalized state (only their hole cards) and synchronized table state for community cards, bets, pots, and player stacks.
+- A disconnected player can reconnect and resume their seat without causing state corruption.
+- Hand history exports (JSON/CSV) produce a complete, replayable record for every completed hand.
+- VPIP and PFR are calculated correctly from stored action events and visible in session summary.
+
+**Success metrics (initial):**
+- Functional: 0 critical bugs for basic hand lifecycle in staged E2E tests.
+- UX: average time-to-first-hand < 5 minutes for new users following invite.
+- Adoption: first closed-playtest with 3 different friend groups within first month of MVP run.
+
+**Milestone plan (short):**
+- Sprint 1 (2 weeks): PRD sign-off, engine state machine, basic DB schema.
+- Sprint 2 (2 weeks): Engine implementation with unit tests + basic API/WebSocket.
+- Sprint 3 (2 weeks): Frontend MVP (lobby, table, join flow) + E2E gameplay tests.
+
+Owners and detailed task assignments to be added in the Phase 1 checklist.
+
 ### Phase 2 — Core Engine & API
 
 **Goals:** Build the server-authoritative poker engine and backend APIs.

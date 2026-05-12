@@ -1,0 +1,104 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/schemas/room-configuration.schema.json",
+  "title": "RoomConfiguration",
+  "type": "object",
+  "required": ["seatCount", "gameType", "blinds", "startingStack"],
+  "properties": {
+    "roomId": { "type": "string" },
+    "hostId": { "type": "string" },
+    "name": { "type": "string" },
+    "seatCount": { "type": "integer", "enum": [6, 9, 12] },
+    "visibility": { "type": "string", "enum": ["private", "public", "password"], "default": "private" },
+    "password": { "type": "string" },
+    "inviteToken": {
+      "type": "object",
+      "properties": {
+        "expiresHours": { "type": "integer", "minimum": 0 },
+        "maxUses": { "type": "integer", "minimum": 0 },
+        "requireApproval": { "type": "boolean", "default": false }
+      },
+      "additionalProperties": false
+    },
+    "gameType": { "type": "string", "enum": ["no-limit", "pot-limit", "fixed-limit"], "default": "no-limit" },
+    "blinds": {
+      "type": "object",
+      "required": ["small", "big"],
+      "properties": {
+        "small": { "type": "integer", "minimum": 0 },
+        "big": { "type": "integer", "minimum": 0 },
+        "ante": { "type": "integer", "minimum": 0, "default": 0 },
+        "buttonAnte": { "type": "boolean", "default": false },
+        "blindSchedule": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["level", "small", "big", "durationMinutes"],
+            "properties": {
+              "level": { "type": "integer", "minimum": 1 },
+              "small": { "type": "integer", "minimum": 0 },
+              "big": { "type": "integer", "minimum": 0 },
+              "durationMinutes": { "type": "integer", "minimum": 1 }
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "startingStack": { "type": "integer", "minimum": 0 },
+    "minBuyIn": { "type": "integer", "minimum": 0 },
+    "maxBuyIn": { "type": "integer", "minimum": 0 },
+    "rebuyAllowed": { "type": "boolean", "default": false },
+    "addOnAllowed": { "type": "boolean", "default": false },
+    "straddle": {
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean", "default": false },
+        "type": { "type": "string", "enum": ["none", "utg", "button", "any"], "default": "none" },
+        "multiplier": { "type": "number", "minimum": 1, "default": 2 }
+      },
+      "additionalProperties": false
+    },
+    "runItTwice": {
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean", "default": false },
+        "runs": { "type": "integer", "minimum": 1, "maximum": 3, "default": 2 }
+      },
+      "additionalProperties": false
+    },
+    "bombPot": {
+      "type": "object",
+      "properties": { "enabled": { "type": "boolean", "default": false } },
+      "additionalProperties": false
+    },
+    "rabbitHunt": { "type": "boolean", "default": false },
+    "timeBank": {
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean", "default": false },
+        "perPlayerSeconds": { "type": "integer", "minimum": 0 }
+      },
+      "additionalProperties": false
+    },
+    "actionTimerSeconds": { "type": "integer", "minimum": 0, "default": 30 },
+    "allowSpectators": { "type": "boolean", "default": false },
+    "hostApprovalRequired": { "type": "boolean", "default": false },
+    "chatEnabled": { "type": "boolean", "default": true },
+    "analyticsEnabled": { "type": "boolean", "default": true },
+    "version": { "type": "string", "default": "1.0" }
+  },
+  "additionalProperties": false,
+  "examples": [
+    {
+      "name": "Friends Game",
+      "seatCount": 9,
+      "visibility": "private",
+      "gameType": "no-limit",
+      "blinds": { "small": 5, "big": 10 },
+      "startingStack": 2000,
+      "actionTimerSeconds": 30
+    }
+  ]
+}
