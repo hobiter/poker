@@ -1201,79 +1201,86 @@ Should not be in MVP unless absolutely necessary:
 
 ## 13. Phase Plan
 
-### Phase 1: Product Foundation
+### Overview
 
-**Deliverables:**
+This plan breaks the project into eight focused phases from discovery through scaling. Each phase includes clear deliverables and milestones to keep the scope manageable and verifiable.
 
-- User flows.
-- Wireframes.
-- Data model.
-- Poker engine design.
-- Room configuration model.
-- Real-time event model.
+### Phase 1 — Discovery & Spec
 
-### Phase 2: MVP Gameplay
+**Goals:** Finalize product requirements and technical design.
 
-**Deliverables:**
+- Page-by-page wireframes and user flows.
+- Formal PRD with MVP boundary and acceptance criteria.
+- Room configuration schema and game settings spec.
+- Poker engine state machine and WebSocket event list.
+- Database schema and analytics event model.
 
-- Create room.
-- Join room.
-- Seat players.
-- Start hand.
-- Play full Texas Hold’em hand.
-- Handle showdown.
-- Track stacks.
-- Save hand history.
+### Phase 2 — Core Engine & API
 
-### Phase 3: Room Management
+**Goals:** Build the server-authoritative poker engine and backend APIs.
 
-**Deliverables:**
+- Secure deck shuffle, deal, and hand evaluation.
+- Pot and side-pot calculation, odd-chip handling.
+- Legal-action validation and state machine implementation.
+- Unit tests for engine logic and deterministic simulations.
+- REST/WebSocket endpoints for room/session control.
 
-- Invite link controls.
-- Host approval.
-- Kick player.
-- Sit out.
-- Reconnect.
-- Pause/resume game.
-- Manual chip adjustment.
+### Phase 3 — MVP Frontend & Realtime
 
-### Phase 4: Analytics
+**Goals:** Deliver the playable MVP UI and realtime connectivity.
 
-**Deliverables:**
+- Lobby and create-room UI with invite flow.
+- Join-as-guest flow and seat selection.
+- Responsive poker table UI (6/9/12 layouts).
+- WebSocket client integration and basic chat.
+- Action controls (fold/check/call/bet/raise/all-in).
 
-- Session report.
-- Chip summary.
-- Win/loss.
-- VPIP.
-- PFR.
-- Aggression stats.
-- Stack graph.
-- Export CSV/JSON.
+### Phase 4 — Gameplay & Resilience
 
-### Phase 5: Advanced Poker Settings
+**Goals:** Harden gameplay, persistence, and reconnect behavior.
 
-**Deliverables:**
+- Full hand lifecycle in production-like conditions.
+- Blind posting, timed increases, and betting rounds.
+- Hand history persistence and replay capability.
+- Disconnect/reconnect handling and time-bank/auto-action.
+- Integration tests and end-to-end gameplay QA.
 
-- Straddle.
-- Ante.
-- Run it twice.
-- Bomb pot.
-- Time bank.
-- Blind schedule.
-- Rabbit hunting.
-- Custom bet presets.
+### Phase 5 — Host Controls & Room Management
 
-### Phase 6: Long-Term Platform
+**Goals:** Add host tooling and secure invitation semantics.
 
-**Deliverables:**
+- Invite token system (expire/revoke/usage limits).
+- Host approval, password-protected rooms, and spectator controls.
+- Host admin panel: pause/resume, kick, chip adjustments.
+- Exports: hand history, session ledger (CSV/JSON/PDF).
 
-- Registered user profiles.
-- Club system.
-- Leaderboards.
-- Historical analytics.
-- Advanced anti-cheating.
-- Mobile optimization.
-- Tournament mode.
+### Phase 6 — Analytics & Reports
+
+**Goals:** Implement event-driven analytics and player/session reports.
+
+- Event ingestion pipeline and analytics worker.
+- Session and player dashboards (stack graph, VPIP, PFR).
+- Aggregations: BB/100, win-rate, positional stats.
+- Exportable reports and CSV/JSON endpoints.
+
+### Phase 7 — Advanced Game Modes & Settings
+
+**Goals:** Add optional, advanced poker rules and modes.
+
+- Straddle variants, run-it-twice, bomb pots, rabbit hunting.
+- Blind schedules and custom level editors.
+- Advanced betting rules and host-configurable presets.
+
+### Phase 8 — Accounts, Clubs & Scaling
+
+**Goals:** Move to persistent users, clubs, and production scaling.
+
+- Registered user profiles and persistent history.
+- Club/league features, leaderboards and lifetime stats.
+- Anti-cheating tooling and device/account heuristics.
+- Performance tuning, autoscaling, and compliance reviews.
+
+---
 
 ---
 
