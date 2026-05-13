@@ -10,6 +10,8 @@ from .ws_manager import ConnectionManager
 
 from engine.deck import Deck
 from engine.session import Session
+from fastapi.staticfiles import StaticFiles
+from pathlib import Path
 
 app = FastAPI(title="Poker - Phase 2 Scaffold")
 
@@ -21,6 +23,12 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# If a built frontend exists at `frontend/dist`, serve it as static files
+# so the backend can host the single-container full-stack.
+dist_path = Path(__file__).resolve().parents[1] / "frontend" / "dist"
+if dist_path.exists():
+    app.mount("/", StaticFiles(directory=str(dist_path), html=True), name="frontend")
 
 store = InMemoryStore()
 manager = ConnectionManager()

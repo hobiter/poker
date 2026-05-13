@@ -1,71 +1,87 @@
-# Deploy the Demo UI to Vercel
+# Deploy the Frontend to Vercel (updated)
 
-This guide explains how to publish the static demo site located at [demo/web/index.html](demo/web/index.html) to Vercel and connect it to a public FastAPI backend (HTTP + WebSocket). It covers both the Git import flow and the CLI flow, plus backend notes (CORS, WSS) needed for the demo to work in production.
+This guide shows how to deploy the Vite + React frontend in `frontend/` to Vercel, how
+to set a backend URL via environment variables, and notes about hosting the FastAPI
+backend (HTTP + WebSocket) separately.
+
+> Note: this repo also contains a legacy static demo at `demo/web/`. The preferred
+> modern frontend is the Vite app in `frontend/` (used by the development workflow).
 
 ## Prerequisites
 
-- A GitHub repository containing this project (demo files are under `demo/web`).
-- A Vercel account (https://vercel.com).
-- A publicly accessible backend URL (HTTPS + WSS) that runs `server.app:app` (FastAPI). See "Backend hosting" below.
+- A GitHub repository containing this project.
+- A Vercel account (https://vercel.com) connected to the repo.
+- A publicly reachable backend URL (HTTPS + WSS) running the FastAPI app.
 
-## 1. Push the demo to GitHub
+## Overview
 
-From the repository root, commit and push the demo files:
+- Deploy the static frontend to Vercel (serves `frontend/dist`).
+- Host the backend (separately) on a platform that supports WebSocket upgrades (Render, Fly, Railway, etc.).
+- Configure an environment variable (`VITE_SERVER_URL`) in the Vercel project so the deployed frontend knows which backend to use.
+
+## A — Deploy via Vercel (Git import)
+
+1. Go to https://vercel.com, click **New Project → Import Git Repository**, and choose your repo.
+2. In the import settings:
+  - **Root Directory**: `frontend`
+  - **Framework Preset**: `Vite` (or `Other`)
+  - **Build Command**: `npm ci && npm run build`
+  - **Output Directory**: `dist`
+3. In the **Environment Variables** section add:
+  - `VITE_SERVER_URL` = `https://api.example.com` (replace with your backend URL)
+  - (Optional) any other runtime keys your app needs.
+4. Click **Deploy**. Vercel will build the Vite app and serve the files from `/dist`.
+
+If you prefer to keep the project root as the Vercel root, set:
+
+  - **Root Directory**: (empty)
+  - **Build Command**: `cd frontend && npm ci && npm run build`
+  - **Output Directory**: `frontend/dist`
+
+## B — Deploy with Vercel CLI
+
+From the `frontend` folder, use the CLI (no global install required):
 
 ```bash
-git add demo/web demo/README.md demo/DEPLOY_VERCEL.md
-git commit -m "Add browser demo and Vercel deploy guide"
-git push origin main
+cd frontend
+npx vercel --prod
 ```
 
-## 2. Deploy with Vercel (Git import)
+Follow the prompts and set the same build/output configuration and `VITE_SERVER_URL` environment variable in the dashboard or during the CLI prompts.
 
-1. Open https://vercel.com and click **New Project → Import Git Repository**.
-2. Select your GitHub repo and on the import options set:
-   - **Root Directory**: `demo/web`
-   - **Framework Preset**: Other (Static Site)
-   - **Build Command**: (leave blank)
-   - **Output Directory**: (leave blank)
-3. Click **Deploy**. Vercel will serve the static files and give you a URL like `https://<project>.vercel.app`.
+## Using `VITE_SERVER_URL` in the frontend
 
-## 3. Deploy with Vercel CLI (alternative)
+To have the frontend use an environment-provided backend URL at build time, use Vite's
+`import.meta.env` variables. For example, update the initial `serverUrl` in
+`frontend/src/App.tsx` (replace the existing hard-coded default):
 
-From the repo root (or `demo/web`) you can use the Vercel CLI:
+```ts
+const defaultServerUrl = import.meta.env.VITE_SERVER_URL ?? 'http://localhost:8000'
+const [serverUrl, setServerUrl] = useState(defaultServerUrl)
+```
+
+This lets Vercel inject `VITE_SERVER_URL` at build time while keeping a sensible local
+default for development. If you want runtime configuration (no rebuild required), you'll need
+to implement a tiny JSON config endpoint or serverless function — but note that Vercel
+serverless functions do not support raw WebSocket upgrades.
+
+## Backend hosting recommendations
+
+The backend must be reachable over HTTPS and support WebSocket upgrades (wss://):
+
+- **Render**: Create a Web Service. Build with `pip install -r requirements.txt` and run with either:
 
 ```bash
-cd demo/web
-npm i -g vercel
-vercel login
-vercel --prod
+# using gunicorn + uvicorn workers (common)
+gunicorn -k uvicorn.workers.UvicornWorker server.app:app
+
+# or directly with uvicorn
+uvicorn server.app:app --host 0.0.0.0 --port $PORT
 ```
 
-Follow the prompts and note the production URL returned by Vercel.
+- **Fly / Railway / DigitalOcean App Platform**: similar commands; ensure WebSocket support is enabled.
 
-## 4. Point the UI at your backend
-
-- The demo UI reads the backend URL from the **Server base URL** input at runtime. After the site is deployed, open the page and set the Server base URL to your backend (for example `https://api.example.com`).
-- To bake a default backend URL into the deployed site, edit the input `value` in [demo/web/index.html](demo/web/index.html):
-
-```html
-<input id="serverUrl" value="https://api.example.com" style="width:260px">
-```
-
-Commit and push the change so the deployed site defaults to your backend.
-
-## 5. Backend hosting (recommended)
-
-The demo requires a publicly reachable FastAPI server that supports WebSocket upgrades. Common options:
-
-- **Render**: Create a Web Service, build with `pip install -r requirements.txt`, start with:
-  ```bash
-  gunicorn -k uvicorn.workers.UvicornWorker server.app:app
-  ```
-- **Railway / Fly / Heroku**: Deploy the repo, set the start command to:
-  ```bash
-  uvicorn server.app:app --host 0.0.0.0 --port $PORT
-  ```
-
-Minimal `requirements.txt` example (put this in repo root if you plan to deploy backend):
+Minimal `requirements.txt` for deployment:
 
 ```
 fastapi
@@ -74,51 +90,68 @@ httpx
 gunicorn
 ```
 
-## 6. CORS and WebSocket notes
+## CORS and WebSocket notes
 
-- Ensure your backend allows the deployed Vercel origin to access HTTP + WebSocket. Example FastAPI CORS middleware (add to `server/app.py`):
+- Configure CORS to allow your Vercel origin. Example in `server/app.py`:
 
 ```python
 from fastapi.middleware.cors import CORSMiddleware
 
 app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["https://<your-vercel-domain>.vercel.app"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+   CORSMiddleware,
+   allow_origins=["https://<your-vercel-domain>.vercel.app"],
+   allow_credentials=True,
+   allow_methods=["*"],
+   allow_headers=["*"],
 )
 ```
 
-- If you use `allow_origins=["*"]` this is convenient for testing but not recommended for production.
-- When the backend is HTTPS, the demo will use `wss://` automatically for WebSocket connections.
+- For quick testing you can use `allow_origins=["*"]`, but this is not recommended for production.
+- Vercel serves the frontend over HTTPS, so your backend must speak HTTPS too; otherwise browsers will block mixed content and WebSocket upgrades will fail.
+- Vercel's static hosting cannot proxy raw WebSocket upgrades to another host via a simple rewrite; therefore the backend must directly expose a `wss://` endpoint.
 
-## 7. Verify the demo
+## Verify the deployment
 
-1. Open your Vercel URL (e.g. `https://<project>.vercel.app`).
-2. Set **Server base URL** to your backend (e.g. `https://api.example.com`).
-3. Create a room, join as two players (two browser tabs or different names), open WebSocket(s), and click **Start Hand**.
-4. Use the **Send Call** and **Force Timeout** buttons to simulate actions and observe events.
+1. Open the Vercel URL (e.g. `https://<project>.vercel.app`).
+2. If you set `VITE_SERVER_URL`, the frontend should default to that backend. Otherwise, set the Server URL input in the UI.
+3. Create/join a room and open two browser tabs to exercise WebSocket messages and hand flow.
 
-If messages do not appear, check the browser console and the backend logs for CORS or WebSocket handshake errors.
+## Troubleshooting
 
-## 8. Troubleshooting
+- **CORS errors**: Confirm the origin in `allow_origins` matches the Vercel domain (including scheme).
+- **WSS handshake failures**: Ensure the backend is HTTPS and the domain supports WebSocket upgrades.
+- **Backend unreachable**: Check that firewall and platform settings allow inbound connections on port 443 or the assigned host port.
 
-- **CORS errors**: Add the correct origin to `allow_origins` in the FastAPI CORS middleware.
-- **WSS handshake failures**: Ensure the backend is served over HTTPS and the proxy supports WebSocket upgrades.
-- **Backend unreachable**: Confirm the backend URL is accessible from the internet and not blocked by firewall.
+## Notes & alternatives
 
-## 9. Optional improvements
-
-- Pre-fill `serverUrl` from an environment variable at build time (requires a build step).
-- Add authentication, rate-limiting, and TLS certificates for production readiness.
-- Add a tiny serverless function or config endpoint that returns the correct backend URL for the deployed frontend.
+- If you need the frontend and backend to be deployed together under one hostname, consider deploying the backend to a platform that supports HTTP + WebSocket and then use the frontend to call that backend directly (recommended).
+- Vercel serverless functions are not suitable for long-lived WebSocket connections; use a dedicated host for the FastAPI server.
 
 ---
 
-If you want, I can:
+If you'd like, I can:
 
-- Prefill the `serverUrl` in [demo/web/index.html](demo/web/index.html) with a placeholder (I will commit that change), and/or
-- Add the CORS middleware snippet to `server/app.py` and create a minimal `requirements.txt` to simplify deploying the backend.
+- Update `frontend/src/App.tsx` to read `VITE_SERVER_URL` by default and commit that change, or
+- Add a sample `vercel.json` if you prefer explicit build and route settings.
 
-Tell me which of those you'd like me to do and I will apply the changes.
+Tell me which and I'll apply it.
+
+## Example `vercel.json` (proxying API)
+
+To keep frontend on Vercel and route API calls to a separate backend, add a `vercel.json` at the repo root like this:
+
+```json
+{
+  "version": 2,
+  "builds": [
+    { "src": "frontend/package.json", "use": "@vercel/static-build", "config": { "distDir": "dist" } }
+  ],
+  "routes": [
+    { "src": "/api/(.*)", "dest": "https://YOUR_BACKEND_URL/$1" },
+    { "src": "/(.*)", "dest": "/index.html" }
+  ]
+}
+```
+
+Replace `https://YOUR_BACKEND_URL` with your backend URL. Note: Vercel rewrites can proxy HTTP endpoints, but they do not proxy raw WebSocket upgrades — your backend must be directly reachable at `wss://` for real-time WebSocket connections.
+
