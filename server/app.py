@@ -1,5 +1,6 @@
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException
 from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
 from typing import Optional
 import uuid
 
@@ -11,6 +12,15 @@ from engine.deck import Deck
 from engine.session import Session
 
 app = FastAPI(title="Poker - Phase 2 Scaffold")
+
+# Allow cross-origin requests from local frontend dev servers (Phase 3)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 store = InMemoryStore()
 manager = ConnectionManager()
@@ -70,6 +80,22 @@ async def start_hand(room_id: str, seed: Optional[int] = None):
         await manager.send_personal(room_id, pid, {"type": "deal:hole", "handId": hand_id, "cards": cards})
 
     return {"handId": hand_id}
+
+
+@app.get("/rooms/{room_id}/session/{player_id}/legal_actions")
+def get_legal_actions(room_id: str, player_id: str):
+    """Return the legal actions for a given player in the active session.
+
+    This is a simple dev/testing endpoint used by the frontend to render
+    allowed action buttons for the current player.
+    """
+    session = store.get_session(room_id)
+    if not session:
+        raise HTTPException(status_code=404, detail="No active session")
+    idx = next((i for i, p in enumerate(session.players) if p.id == player_id), None)
+    if idx is None:
+        raise HTTPException(status_code=404, detail="Player not in session")
+    return {"actions": session.legal_actions(idx)}
 
 
 @app.websocket("/ws/{room_id}/{client_id}")
