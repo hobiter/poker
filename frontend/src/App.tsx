@@ -5,7 +5,9 @@ import SeatLayout from './components/SeatLayout'
 import BettingPanel from './components/BettingPanel'
 
 function App() {
-  const [serverUrl, setServerUrl] = useState('http://localhost:8000')
+  // Use Vite env var if provided at build time; otherwise default to same origin
+  const defaultServerUrl = (import.meta.env.VITE_SERVER_URL as string) ?? (typeof window !== 'undefined' ? `${window.location.protocol}//${window.location.host}` : 'http://localhost:8000')
+  const [serverUrl, setServerUrl] = useState(defaultServerUrl)
   const [roomId, setRoomId] = useState('')
   const [clientId, setClientId] = useState('')
   const [messages, setMessages] = useState<string[]>([])
