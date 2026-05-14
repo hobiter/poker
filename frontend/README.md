@@ -82,7 +82,7 @@ Render advanced settings:
 
 ```text
 Secret Files: leave empty
-Health Check Path: leave empty for now
+Health Check Path: /healthz
 Registry Credential: No credential
 Docker Build Context Directory: .
 Dockerfile Path: ./Dockerfile
@@ -90,21 +90,6 @@ Docker Command: uvicorn server.app:app --host 0.0.0.0 --port $PORT
 Pre-Deploy Command: leave empty
 Auto-Deploy: On Commit
 Build Filters: leave empty
-```
-
-Do not set `Health Check Path` to `/healthz` unless the backend has a matching
-route. To add one, put this in `server/app.py`:
-
-```python
-@app.get("/healthz")
-def healthz():
-    return {"ok": True}
-```
-
-Then Render can use:
-
-```text
-Health Check Path: /healthz
 ```
 
 If deploying as a Python service instead of a Docker service, ignore the Docker

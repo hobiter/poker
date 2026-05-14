@@ -59,6 +59,12 @@ class InMemoryStore:
         if not room:
             return
         room["session"] = session
+        players_by_id = {player["id"]: player for player in room.get("players", [])}
+        for session_player in getattr(session, "players", []):
+            player = players_by_id.get(session_player.id)
+            if player is not None:
+                player["stack"] = session_player.stack
+                player["status"] = session_player.status
 
     def get_session(self, room_id: str):
         room = self.rooms.get(room_id)
