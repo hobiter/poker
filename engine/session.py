@@ -269,6 +269,7 @@ class Session:
         """
         if self.street == "finished":
             return None
+
         contenders = [i for i, p in enumerate(self.players) if p.status != "folded"]
         if len(contenders) == 1:
             winner = contenders[0]
@@ -302,14 +303,14 @@ class Session:
 
         self.street = "finished"
         self.current_player_idx = None
-            result = {
-                "type": "hand:finished",
-                "reason": "showdown",
-                "awards": awards,
-                "community": self.community,
-            }
-            self._clear_contributions()
-            return result
+        result = {
+            "type": "hand:finished",
+            "reason": "showdown",
+            "awards": awards,
+            "community": self.community,
+        }
+        self._clear_contributions()
+        return result
 
     def _clear_contributions(self) -> None:
         for player in self.players:
