@@ -24,6 +24,13 @@ export async function getRoom(serverUrl: string, roomId: string) {
   return res.json()
 }
 
+export async function getRoomState(serverUrl: string, roomId: string, playerId?: string) {
+  const url = new URL(`${serverUrl}/rooms/${roomId}/state`)
+  if (playerId) url.searchParams.set('client_id', playerId)
+  const res = await fetch(url.toString())
+  return res.json()
+}
+
 export async function startHand(serverUrl: string, roomId: string) {
   const res = await fetch(`${serverUrl}/rooms/${roomId}/start_hand`, { method: 'POST', headers: { 'Content-Type': 'application/json' } })
   return res.json()

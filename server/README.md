@@ -20,3 +20,10 @@ To run the app locally for manual testing:
 # install requirements (fastapi, uvicorn)
 uvicorn server.app:app --reload
 ```
+
+Useful endpoints:
+
+- `GET /healthz` — lightweight health check for Render or another web service host.
+- `GET /rooms/{room_id}/state?client_id={player_id}` — JSON-safe room snapshot for reconnects, including public table state plus the requesting player's private hole cards when available.
+- `GET /rooms/{room_id}/session/{player_id}/legal_actions` — legal actions for the active player.
+- `POST /rooms/{room_id}/force_timeout` — test-only timeout simulation.

@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react'
-import { createRoom, joinRoom, startHand, getRoom, forceTimeout } from './openapiClient'
-import { WSMessage } from './types'
+import { createRoom, joinRoom, startHand, getRoom, getRoomState, forceTimeout } from './openapiClient'
+import { PersonalView, RoomPublicView, WSMessage } from './types'
 import SeatLayout from './components/SeatLayout'
 import BettingPanel from './components/BettingPanel'
 
@@ -25,6 +25,42 @@ function App() {
     setMessages(prev => [...prev, msg])
   }
 
+  function hydratePublicView(publicView?: RoomPublicView) {
+    if (!publicView) return
+    const roomPlayers = publicView.players || []
+    const session = publicView.session
+    if (session?.players) {
+      const playerNames = new Map(roomPlayers.map((p: any) => [p.id, p]))
+      setPlayers(session.players.map((p: any) => ({ ...(playerNames.get(p.id) || {}), ...p })))
+    } else {
+      setPlayers(roomPlayers)
+    }
+    if (session) {
+      setCommunity(session.community || [])
+      setStreet(session.street || null)
+      setCurrentTurn(session.currentTurn || null)
+    }
+  }
+
+  function hydratePersonalView(personalView?: PersonalView | null) {
+    if (!personalView?.clientId || !personalView.holeCards) return
+    setPersonalHoleCards(prev => ({ ...prev, [personalView.clientId]: personalView.holeCards || [] }))
+  }
+
+  async function refreshAllowedActions(nextPlayerId: string | null) {
+    if (nextPlayerId !== clientId || !roomId) {
+      setAllowedActions(null)
+      return
+    }
+    try {
+      const la = await (await import('./openapiClient')).getLegalActions(serverUrl, roomId, clientId)
+      setAllowedActions(la.actions || la)
+    } catch (e) {
+      log('legal actions fetch error: ' + String(e))
+      setAllowedActions(null)
+    }
+  }
+
   async function handleCreateRoom() {
     try {
       const res = await createRoom(serverUrl)
@@ -47,7 +83,7 @@ function App() {
       log('Joined room: ' + JSON.stringify(res))
       // refresh room info
       const room = await getRoom(serverUrl, roomId)
-      setPlayers(room.players || [])
+      hydratePublicView(room)
     } catch (e) {
       log('Join error: ' + String(e))
     }
@@ -56,8 +92,9 @@ function App() {
   async function fetchRoom() {
     if (!roomId) return
     try {
-      const room = await getRoom(serverUrl, roomId)
-      setPlayers(room.players || [])
+      const room = clientId ? await getRoomState(serverUrl, roomId, clientId) : await getRoom(serverUrl, roomId)
+      hydratePublicView(room.publicView || room)
+      hydratePersonalView(room.personalView)
     } catch (e) {
       log('Fetch room error: ' + String(e))
     }
@@ -79,7 +116,14 @@ function App() {
       log('WS msg: ' + e.data)
       try {
         const msg = JSON.parse(e.data) as WSMessage
-        if (msg.type === 'deal:hole') {
+        if (msg.type === 'state_sync') {
+          hydratePublicView(msg.publicView)
+          hydratePersonalView(msg.personalView)
+          refreshAllowedActions(msg.publicView?.session?.currentTurn || null)
+        } else if (msg.type === 'state:update') {
+          hydratePublicView(msg.publicView)
+          refreshAllowedActions(msg.publicView?.session?.currentTurn || null)
+        } else if (msg.type === 'deal:hole') {
           // this message is personal — store the cards for this client
           // @ts-ignore
           setPersonalHoleCards(prev => ({ ...prev, [clientId]: msg.cards }))
@@ -101,19 +145,7 @@ function App() {
           const m: any = msg
           setCurrentTurn(m.next || null)
           // if it's our turn, fetch legal actions
-          if (m.next === clientId) {
-            ;(async () => {
-              try {
-                const la = await (await import('./openapiClient')).getLegalActions(serverUrl, roomId, clientId)
-                setAllowedActions(la.actions || la)
-              } catch (e) {
-                log('legal actions fetch error: ' + String(e))
-                setAllowedActions(null)
-              }
-            })()
-          } else {
-            setAllowedActions(null)
-          }
+          refreshAllowedActions(m.next || null)
         }
       } catch (err) {
         // ignore parse error
